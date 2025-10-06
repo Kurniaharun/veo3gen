@@ -12,8 +12,8 @@
 npm install
 ```
 
-### 2. Set Environment Variables
-Set your Gemini API key in Heroku:
+### 2. Set Environment Variables (Optional)
+The API key is already configured in the code. If you want to use a different key, set it in Heroku:
 ```bash
 heroku config:set GEMINI_API_KEY=your_actual_api_key_here
 ```
@@ -26,8 +26,8 @@ heroku login
 # Create Heroku app
 heroku create your-app-name
 
-# Set environment variables
-heroku config:set GEMINI_API_KEY=your_actual_api_key_here
+# Set environment variables (optional - API key is already configured)
+# heroku config:set GEMINI_API_KEY=your_actual_api_key_here
 
 # Deploy
 git add .
@@ -41,10 +41,10 @@ heroku open
 ```
 
 ## Environment Variables
-- `GEMINI_API_KEY`: Your Google Gemini API key for VEO video generation
+- `GEMINI_API_KEY`: Your Google Gemini API key for VEO video generation (already configured in code)
 
 ## Notes
 - The app will automatically build and start on Heroku
-- Make sure to set the `GEMINI_API_KEY` environment variable in Heroku dashboard
+- API key is already configured in the code (no need to set environment variables)
 - The app uses Express server to serve the React build files
 - No localhost port configuration is needed for production

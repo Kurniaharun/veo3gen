@@ -46,7 +46,7 @@
 2. **Set up Heroku app:**
    ```bash
    heroku create your-app-name
-   heroku config:set GEMINI_API_KEY=your_actual_api_key_here
+   # API key is already configured in the code
    ```
 
 3. **Deploy:**
@@ -62,6 +62,6 @@
 - ✅ Configured for Heroku's dynamic port
 - ✅ Added proper build and start scripts
 - ✅ Created deployment documentation
-- ✅ Added environment variable configuration
+- ✅ **API key automatically configured** - no manual setup needed!
 
 Your app is now ready for Heroku deployment! 🚀
