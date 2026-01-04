@@ -1,0 +1,272 @@
+-- Quest Mission Detector Script (Real-time Monitoring)
+-- Clean print with auto-update
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Function to clear console (simulated)
+local function clearConsole()
+    for i = 1, 50 do
+        print("\n")
+    end
+end
+
+-- Function to check if objective is completed
+local function isObjectiveCompleted(objective)
+    local checkmark = objective:FindFirstChild("Content") and 
+                     objective.Content:FindFirstChild("Check") and 
+                     objective.Content.Check:FindFirstChild("Vector")
+    
+    return checkmark and checkmark.Visible
+end
+
+-- Function to get objective progress
+local function getObjectiveProgress(objective)
+    local barFrame = objective:FindFirstChild("BarFrame")
+    if barFrame then
+        local bar = barFrame:FindFirstChild("Bar")
+        local bg = barFrame:FindFirstChild("BG")
+        local progress = barFrame:FindFirstChild("Progress")
+        
+        if bar and bg and bg.Size.X.Offset > 0 then
+            local percentage = (bar.Size.X.Offset / bg.Size.X.Offset) * 100
+            local progressText = progress and progress.Text or ""
+            return math.floor(percentage), progressText
+        end
+    end
+    return 0, ""
+end
+
+-- Function to get objective details
+local function getObjectiveDetails(objective)
+    local content = objective:FindFirstChild("Content")
+    if not content then return nil end
+    
+    local display = content:FindFirstChild("Display")
+    if not display then return nil end
+    
+    local prefix = display:FindFirstChild("Prefix")
+    local itemName = display:FindFirstChild("ItemName")
+    local suffix = display:FindFirstChild("Suffix")
+    
+    local objectiveText = ""
+    if prefix then objectiveText = objectiveText .. prefix.Text end
+    if itemName then objectiveText = objectiveText .. (prefix and " " or "") .. itemName.Text end
+    if suffix then objectiveText = objectiveText .. (itemName and " " or "") .. suffix.Text end
+    
+    return objectiveText:gsub("%s+", " "):gsub("^%s*(.-)%s*$", "%1")
+end
+
+-- Function to check quest status
+local function checkQuestStatus(questFrame)
+    local top = questFrame:FindFirstChild("Top")
+    if not top then return nil end
+    
+    local topFrame = top:FindFirstChild("TopFrame")
+    if not topFrame then return nil end
+    
+    local header = topFrame:FindFirstChild("Header")
+    if not header then return nil end
+    
+    local questName = header.Text
+    local content = questFrame:FindFirstChild("Content")
+    
+    if not content then return nil end
+    
+    local objectives = {}
+    local completedCount = 0
+    local totalCount = 0
+    
+    -- Check all objectives
+    for i = 1, 10 do
+        local objective = content:FindFirstChild("Objective" .. i)
+        if objective and objective.Visible then
+            local details = getObjectiveDetails(objective)
+            local completed = isObjectiveCompleted(objective)
+            local percentage, progressText = getObjectiveProgress(objective)
+            
+            if details and details ~= "" then
+                totalCount = totalCount + 1
+                if completed then
+                    completedCount = completedCount + 1
+                end
+                
+                table.insert(objectives, {
+                    text = details,
+                    completed = completed,
+                    percentage = percentage,
+                    progressText = progressText
+                })
+            end
+        end
+    end
+    
+    return {
+        name = questName,
+        objectives = objectives,
+        allCompleted = completedCount == totalCount and totalCount > 0,
+        completedCount = completedCount,
+        totalCount = totalCount
+    }
+end
+
+-- Main detection function
+local function detectAllQuests()
+    local quests = {}
+    
+    -- Check Quest List (new UI)
+    local questUI = playerGui:FindFirstChild("Quest")
+    if questUI then
+        local list = questUI:FindFirstChild("List")
+        if list then
+            local inside = list:FindFirstChild("Inside")
+            if inside then
+                for _, questFrame in pairs(inside:GetChildren()) do
+                    if questFrame:IsA("Frame") and questFrame.Name == "Quest" and questFrame.Visible then
+                        local questData = checkQuestStatus(questFrame)
+                        if questData and questData.totalCount > 0 then
+                            table.insert(quests, questData)
+                        end
+                    end
+                end
+            end
+        end
+        
+        -- Check Content (alternative UI)
+        local content = questUI:FindFirstChild("Content")
+        if content then
+            -- Check SpecialTile
+            local specialTile = content:FindFirstChild("SpecialTile")
+            if specialTile and specialTile.Visible then
+                local items = specialTile:FindFirstChild("Items")
+                if items then
+                    local questLabel = items:FindFirstChild("QuestLabel")
+                    local progress = items:FindFirstChild("Progress")
+                    local progressLabel = progress and progress:FindFirstChild("Label")
+                    
+                    if questLabel and questLabel.Text ~= "" then
+                        local progressText = progressLabel and progressLabel.Text or "0/0"
+                        local current, total = progressText:match("(%d+)/(%d+)")
+                        current = tonumber(current) or 0
+                        total = tonumber(total) or 1
+                        local isComplete = current >= total
+                        
+                        table.insert(quests, {
+                            name = questLabel.Text,
+                            objectives = {{
+                                text = "Progress: " .. progressText,
+                                completed = isComplete,
+                                percentage = total > 0 and math.floor((current/total)*100) or 0,
+                                progressText = progressText
+                            }},
+                            allCompleted = isComplete,
+                            completedCount = isComplete and 1 or 0,
+                            totalCount = 1
+                        })
+                    end
+                end
+            end
+            
+            -- Check regular Tile
+            local tile = content:FindFirstChild("Tile")
+            if tile and tile.Visible then
+                local items = tile:FindFirstChild("Items")
+                if items then
+                    local questLabel = items:FindFirstChild("QuestLabel")
+                    local progress = items:FindFirstChild("Progress")
+                    local progressLabel = progress and progress:FindFirstChild("Label")
+                    
+                    if questLabel and questLabel.Text ~= "" then
+                        local progressText = progressLabel and progressLabel.Text or "0/0"
+                        local current, total = progressText:match("(%d+)/(%d+)")
+                        current = tonumber(current) or 0
+                        total = tonumber(total) or 1
+                        local isComplete = current >= total
+                        
+                        table.insert(quests, {
+                            name = questLabel.Text,
+                            objectives = {{
+                                text = "Progress: " .. progressText,
+                                completed = isComplete,
+                                percentage = total > 0 and math.floor((current/total)*100) or 0,
+                                progressText = progressText
+                            }},
+                            allCompleted = isComplete,
+                            completedCount = isComplete and 1 or 0,
+                            totalCount = 1
+                        })
+                    end
+                end
+            end
+        end
+    end
+    
+    return quests
+end
+
+-- Clean print function
+local function printQuests(quests)
+    clearConsole()
+    
+    local timestamp = os.date("%H:%M:%S")
+    print("╔" .. string.rep("═", 58) .. "╗")
+    print("║  QUEST MISSION MONITOR - " .. timestamp .. string.rep(" ", 58 - 28 - #timestamp) .. "║")
+    print("╚" .. string.rep("═", 58) .. "╝")
+    print("")
+    
+    if #quests == 0 then
+        print("  No active quests found!")
+        print("")
+        return
+    end
+    
+    local successCount = 0
+    local totalQuests = #quests
+    
+    for _, questData in ipairs(quests) do
+        if questData.allCompleted then
+            successCount = successCount + 1
+            print("  ✅ SUCCESS | " .. questData.name)
+        else
+            print("  ❌ PROGRESS | " .. questData.name .. " [" .. questData.completedCount .. "/" .. questData.totalCount .. "]")
+        end
+        
+        -- Print objectives
+        for _, obj in ipairs(questData.objectives) do
+            local status = obj.completed and "✓" or "✗"
+            local progressInfo = ""
+            
+            if obj.progressText ~= "" and obj.progressText ~= "0/0" then
+                progressInfo = " [" .. obj.progressText .. "]"
+            elseif obj.percentage > 0 then
+                progressInfo = " [" .. obj.percentage .. "%]"
+            end
+            
+            print("     " .. status .. " " .. obj.text .. progressInfo)
+        end
+        print("")
+    end
+    
+    print("  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    print("  SUMMARY: " .. successCount .. "/" .. totalQuests .. " Quests Completed")
+    print("  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+    print("")
+end
+
+-- Main loop
+print("Quest Monitor Started! Updating every 2 seconds...")
+print("Press Ctrl+C or stop script to exit")
+print("")
+
+while true do
+    local success, quests = pcall(detectAllQuests)
+    
+    if success then
+        printQuests(quests)
+    else
+        print("Error detecting quests: " .. tostring(quests))
+    end
+    
+    wait(2) -- Update every 2 seconds
+end
